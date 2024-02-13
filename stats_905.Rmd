@@ -1,0 +1,148 @@
+---
+title: "stats_905"
+author: "MJ_AK"
+date: "2024-02-07"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Statistiques  Modèles linéaires
+
+# M2 SIGMA  UE 905
+
+## F. Laroche
+
+## 2023-2024
+
+## Question 1
+
+```{r}
+# imports
+library(car)
+
+setwd("E:/SIGMA/M2/UE_905/dossier_stat")
+data <- read.csv("dataProjet_2024.csv", header = T, sep = ",")
+
+# filtrer dataset
+data_quercus <- data[data$recherche_esp_lb_nom_plantae == "Quercus L., 1753",]
+
+# modèle ANOVA
+modAnovRegQuad2_Querc_BC <- lm(I(log10(DBH))~alti+I(alti^2)+releve,data=data_quercus) 
+modAnov_resStand <- rstandard(modAnovRegQuad2_Querc_BC)
+
+### Hypothèse 1 : loi gaussienne des erreurs
+
+par(mfrow=c(2,2))
+bks <- seq(-6,6,0.1)
+qqPlot(modAnov_resStand,distribution="norm",mean=0,sd=1,line="none")
+hist(modAnov_resStand, probability=T, breaks=bks)
+
+lines(bks,dnorm(bks,0,1),col="blue")
+
+### Hypothèse 2 : indépendance des erreurs
+
+vecIndObs <- as.numeric(rownames(modAnovRegQuad2_Querc_BC$model))
+boxplot(modAnov_resStand~data_quercus$releve[vecIndObs],xlab="", 
+        ylab="Résidu standardisé",las=2,range=0)
+abline(h=0,lty="dashed")
+
+### Hypothèse 3 : homoscédasticité des erreurs
+
+#SL-plot
+plot(modAnovRegQuad2_Querc_BC,which=3,pch=3, add.smooth = FALSE) #Base du SL-plot pré-programmée dans R
+abline(h=0.8,col=4,lwd=2) #Ligne horizontale attendue
+lo <- loess(sqrt(abs(modAnov_resStand))~modAnovRegQuad2_Querc_BC$fitted.values) #Moyenne glissante des points
+vFit <- sort(unique(modAnovRegQuad2_Querc_BC$fitted.values))
+predLo <- predict(lo,vFit,se=TRUE)
+lines(predLo$fit~vFit,col=2,lwd=2)
+#Enveloppe de confiance autour de cette moyenne glissante :
+nFit <- length(vFit); ICBonf <- qnorm(1-0.05/2/nFit)
+lines(predLo$fit+ICBonf*predLo$se.fit~sort(
+    unique(modAnovRegQuad2_Querc_BC$fitted.values)
+  ),col=2,lwd=2,lty="dashed")
+lines(predLo$fit-ICBonf*predLo$se.fit~sort(
+    unique(modAnovRegQuad2_Querc_BC$fitted.values)
+  ),col=2,lwd=2,lty="dashed")
+
+```
+
+## Question 2
+
+```{r}
+
+modAnova <- lm(DBH~0+releve+recherche_esp_lb_nom_plantae,data=data)
+modAnov_resStand <- rstandard(modAnova)
+
+### Hypothèse 1 : loi gaussienne des erreurs
+
+par(mfrow=c(2,2))
+bks <- seq(-7,7,0.1)
+qqPlot(modAnov_resStand,distribution="norm",mean=0,sd=1,line="none")
+hist(modAnov_resStand, probability=T, breaks=bks)
+lines(bks,dnorm(bks,0,1),col="blue")
+
+### Hypothèse 2 : indépendance des erreurs
+
+vecIndObs <- as.numeric(rownames(modAnova$model))
+boxplot(modAnov_resStand~data_quercus$releve[vecIndObs],xlab="", 
+        ylab="Résidu standardisé",las=2,range=0)
+abline(h=0,lty="dashed")
+
+### Hypothèse 3 : homoscédasticité des erreurs
+
+#SL-plot
+plot(modAnova,which=3,pch=3, add.smooth = FALSE) #Base du SL-plot pré-programmée dans R
+abline(h=0.8,col=4,lwd=2) #Ligne horizontale attendue
+lo <- loess(sqrt(abs(modAnov_resStand))~modAnova$fitted.values) #Moyenne glissante des points
+vFit <- sort(unique(modAnova$fitted.values))
+predLo <- predict(lo,vFit,se=TRUE)
+lines(predLo$fit~vFit,col=2,lwd=2)
+#Enveloppe de confiance autour de cette moyenne glissante :
+nFit <- length(vFit); ICBonf <- qnorm(1-0.05/2/nFit)
+lines(predLo$fit+ICBonf*predLo$se.fit~sort(
+    unique(modAnova$fitted.values)
+  ),col=2,lwd=2,lty="dashed")
+lines(predLo$fit-ICBonf*predLo$se.fit~sort(
+    unique(modAnova$fitted.values)
+  ),col=2,lwd=2,lty="dashed")
+
+
+### Analyse des sorties
+  # estimation des intervalles de confiance
+summary(modAnova)$coefficients
+tabConfInt <- confint(modAnova,level=0.95)
+par(mfrow=c(1,2))
+
+x <- barplot(summary(modAnova)$coefficients[,1],las=2)
+arrows(x0 = x, y0= tabConfInt[,1],
+  y1=tabConfInt[,2], code=3,angle=90,
+  length=0.05)
+
+  # test de significativité selon une sous-population de référence
+
+#Définition d'une sous-population de référence, ici BLO_11 
+data$releve <- relevel(as.factor(data$releve),ref="BLO_1")
+
+#Reformulation du modèle ANOVA :
+modAnovaDif <- lm(DBH~releve+recherche_esp_lb_nom_plantae,data=data)
+summary(modAnovaDif)$coefficients
+
+summary(modAnova)$coefficients
+summary(modAnovaDif)$coefficients
+tabConfInt <- confint(modAnovaDif,level=0.95)
+
+
+## R²
+x <- boxplot(DBH~releve,data=data,range=0,las=2,xlab="",cex.axis=0.5)
+vCoef <- modAnova$coefficients[
+    match(x$names,gsub("releve","",names(modAnova$coefficients)))]
+points(1:length(vCoef),rep(mean(data$DBH,na.rm=TRUE),length(vCoef)),pch=21,bg=4)
+points(1:length(vCoef),
+  modAnova$coefficients[
+    match(x$names,gsub("releve","",names(modAnova$coefficients)))],
+  pch=21,bg=2)
+
+```
