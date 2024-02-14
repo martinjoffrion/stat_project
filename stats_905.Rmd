@@ -2,11 +2,14 @@
 title: "stats_905"
 author: "MJ_AK"
 date: "2024-02-07"
-output: pdf_document
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = 'center')
 ```
 
 # Statistiques  Modèles linéaires
@@ -35,7 +38,6 @@ modAnov_resStand <- rstandard(modAnovRegQuad2_Querc_BC)
 
 ### Hypothèse 1 : loi gaussienne des erreurs
 
-par(mfrow=c(2,2))
 bks <- seq(-6,6,0.1)
 qqPlot(modAnov_resStand,distribution="norm",mean=0,sd=1,line="none")
 hist(modAnov_resStand, probability=T, breaks=bks)
@@ -45,7 +47,7 @@ lines(bks,dnorm(bks,0,1),col="blue")
 ### Hypothèse 2 : indépendance des erreurs
 
 vecIndObs <- as.numeric(rownames(modAnovRegQuad2_Querc_BC$model))
-boxplot(modAnov_resStand~data_quercus$releve[vecIndObs],xlab="", 
+boxplot(modAnov_resStand~data_quercus$Status[vecIndObs],xlab="", 
         ylab="Résidu standardisé",las=2,range=0)
 abline(h=0,lty="dashed")
 
@@ -69,16 +71,31 @@ lines(predLo$fit-ICBonf*predLo$se.fit~sort(
 
 ```
 
+-   Hypothèse 1 : loi gaussienne des erreurs :
+
+La forme slalomée de la répartition des résidus sur le qqplot indique un potentiel défault de Kurtosis, confirmé sur l'histogramme de répartition. Notre jeu de donnée souffre ainsi d'un excès de Kurtosis, acceptable au vu de la robustesse du modèle gaussien.
+
+-   Hypothèse 2 : indépendance des erreurs :
+
+Notre modèle est déjà filtré sur une espèce, et l'ANOVA intègre les variables relevé et altitude, la seule variable encore suscueptible de générer une dépendance des résidus est le statut, à savoir l'état de l'arbre au moment du prélèvement.
+
+Le boxplot démontre l'absence de biais sur les résidus, et donc l'indépendance des individus par rapport à la variable statut.
+
+-   Hypothèse 3 : homoscédasticité des erreurs :
+
+Sur le SL-plot, la moyenne lissée (courbe rouge pleine) des résidus standardisés est presque confondue avec la moyenne théorique attendue (courbe bleue), preuve de l'homoscédasticité des erreurs.
+
+Le modèle \*modAnovRegQuad2_Querc_BC3 avec effet de relevé et effet quadratique de l'altitude valide donc toutes les hypothèses du modèle linéaire.
+
 ## Question 2
 
 ```{r}
-
+# Define model 
 modAnova <- lm(DBH~0+releve+recherche_esp_lb_nom_plantae,data=data)
 modAnov_resStand <- rstandard(modAnova)
 
 ### Hypothèse 1 : loi gaussienne des erreurs
 
-par(mfrow=c(2,2))
 bks <- seq(-7,7,0.1)
 qqPlot(modAnov_resStand,distribution="norm",mean=0,sd=1,line="none")
 hist(modAnov_resStand, probability=T, breaks=bks)
@@ -87,7 +104,7 @@ lines(bks,dnorm(bks,0,1),col="blue")
 ### Hypothèse 2 : indépendance des erreurs
 
 vecIndObs <- as.numeric(rownames(modAnova$model))
-boxplot(modAnov_resStand~data_quercus$releve[vecIndObs],xlab="", 
+boxplot(modAnov_resStand~data$recherche_esp_lb_nom_plantae[vecIndObs],xlab="", 
         ylab="Résidu standardisé",las=2,range=0)
 abline(h=0,lty="dashed")
 
@@ -146,9 +163,26 @@ points(1:length(vCoef),
   pch=21,bg=2)
 ```
 
+-   Hypothèse 1 : loi gaussienne des erreurs :
+
+A nouveau, la forme slalomée de la répartition des résidus sur le qqplot indique un potentiel défault de Kurtosis, aditionné à un légère asymétrie, confirmés sur l'histogramme de répartition. Notre jeu de donnée souffre d'un excès de Kurtosis et d'une légère asymétrie à gauche.
+
+-   Hypothèse 2 : indépendance des erreurs :
+
+Notre modèle n'est plus filtré sur une espèce, mais l'ANOVA intègre toutes les variables potentiellement sources de dépendances des erreurs. Ainsi, les résidus ont un biais nul quant à la variable espèce, comme prouvé sur le boxplot.
+
+-   Hypothèse 3 : homoscédasticité des erreurs :
+
+Sur le SL-plot, la moyenne lissée (courbe rouge pleine) des résidus standardisés s'éloigne fortement de la moyenne théorique attendue (courbe bleue). Les résidus ont une trop forte variance pour les relevés à faible diamètre et à fort diamètre moyen.
+
+
+Inclure la variable espèce dans l'ANOVA n'est donc pas une solution pour combler l'influence des espèces. Le modèle ne valide pas complètement les hypothèses de départ. Au vu de la robustesse du test ANOVA, nous continuons l'analyse, et comme attendu, les résultats sont très médiocres. 
+
+Sur le boxplot final, on observe ainsi des moyennes empiriques de sous échantillons (points rouges) plus "éloignées" des sous échantillons que la moyenne empirique globlabe (point bleu), symptome de l'échec du modèle.
+
 ## Question 3
+
 ```{r}
- 
 data_quercus$triangle[data_quercus$releve == 'BLO_12'|
                  data_quercus$releve == 'BLO_13'|
                  data_quercus$releve == 'BLO_17'] <- 'TR_1'
@@ -176,6 +210,7 @@ for (i in 1:length(triangle))
    return(c(longPla,latiPla))
   })
   polygon(coorPla[1,],coorPla[2,],col = col_pal[i] )
+  text(mean(coorPla[1,],na.rm=TRUE),mean(coorPla[2,],na.rm=TRUE),labels = triangle[i])
 }
 
 coorPla <- sapply(unique(data_quercus$releve),function(idPla){
@@ -192,22 +227,18 @@ modAnovaTriangle <- lm(DBH~0+triangle,data=data_quercus)
 modAnov_resStand <- rstandard(modAnovaTriangle)
 
 ### Hypothèse 1 : loi gaussienne des erreurs
-
-par(mfrow=c(2,2))
 bks <- seq(-3,8,0.1)
 qqPlot(modAnov_resStand,distribution="norm",mean=0,sd=1,line="none")
 hist(modAnov_resStand, probability=T, breaks=bks)
 lines(bks,dnorm(bks,0,1),col="blue")
 
 ### Hypothèse 2 : indépendance des erreurs
-
-vecIndObs <- as.numeric(rownames(modAnova$model))
+vecIndObs <- as.numeric(rownames(modAnovaTriangle$model))
 boxplot(modAnov_resStand~data_quercus$releve[vecIndObs],xlab="", 
-        ylab="Résidu standardisé",las=2,range=0)
+        ylab="Residu standardise",las=2,range=0)
 abline(h=0,lty="dashed")
 
 ### Hypothèse 3 : homoscédasticité des erreurs
-
 #SL-plot
 plot(modAnovaTriangle,which=3,pch=3, add.smooth = FALSE) #Base du SL-plot pré-programmée dans R
 abline(h=0.8,col=4,lwd=2) #Ligne horizontale attendue
@@ -232,7 +263,27 @@ anova(modAnovaTriangle, modAnovaReleve)
 #F=239.87 avec p<<0.05 donc triqngle diminue valeur R21, car modèle simple = triangle et modèle complexe = modele releve
 
 ```
+
+-   Hypothèse 1 : loi gaussienne des erreurs :
+
+A nouveau, la forme slalomée de la répartition des résidus sur le qqplot indique un potentiel défault de Kurtosis important, aditionné à un asymétrie marquée, confirmés sur l'histogramme de répartition. Notre jeu de donnée souffre d'un excès de Kurtosis et d'une forte asymétrie à gauche, invalidant l'hypothèse de normalité.
+
+-   Hypothèse 2 : indépendance des erreurs :
+
+Notre modèle filtré intègre toutes les variables potentiellement sources de dépendances des erreurs sauf celle du relevé. Nous allons donc tester la dépendance des résidus concernant cette variable. 
+
+Nous observons sur le boxplot obtenu de légers biais, notamment pour les relevés 12, 13 et 17 (triangle 1). L'indépendance n'est donc pas pleinement satisfaisante.
+
+-   Hypothèse 3 : homoscédasticité des erreurs :
+
+Sur le SL-plot, nous constatons une variance trop faible pour les relevés à fort diamètre moyen. La moyenne lissée reste toutefois proche de la moyenne théorique. 
+
+Les résultats du test emboîté pour ce niveau d'agrégation ne sont pas concluants. Comparé au modèle complexe de relevé, le facteur F est très important (239.87) et la p-value très faible (<2.2e-16). La probabilité que le modèle de relevé augmente la valeur du coefficient de corrélation par rapport à notre modèle à triangle est très élevée, de l'odre de 99%.
+
+La fusion des sous populations n'est donc pas efficace. Le modèle initial intégrant la variable relevé sans regroupement reste le plus cohérent.
+
 ## Question 4
+
 ```{r}
 
 vLogRel <- scale(coef(lm(lastLog~0+releve,data=data_quercus)))
@@ -245,7 +296,6 @@ modRegQuadLatRel_Querc_BC <- lm(
 summary(modRegQuadLatRel_Querc_BC )
 
 mod <- modRegQuadLatRel_Querc_BC
-par(mfrow=c(1,3))
 #DISTRIBUTION SYMETRIQUE
 qqPlot(mod,distribution="norm",line="none")
 #HOMOSCEDASTICITE
@@ -278,6 +328,12 @@ lines(predLo$fit+ICBonf*predLo$se.fit~vFit,col=2,lwd=2,lty="dashed")
 lines(predLo$fit-ICBonf*predLo$se.fit~vFit,col=2,lwd=2,lty="dashed")
 ```
 
+Comparé aux résultats obtenu avec la variable latitude, la variable *lasLog* (dernière coupe massive) explique bien mieux l'effet relevé. C'est notamment visible dans le Scale-Location plot, où la moyenne glissée suit presque parfaitement le moyenne théorique, à l'exception des individus aux forts diamètres. 
+
+Toutefois, l'effet des relevés persiste, comme illustré dans le dernier graphique. 
+
+La variable dernière coupe massive explique donc partiellement l'effet relevé.
+
 ## Question 5
 
 ```{r}
@@ -286,6 +342,7 @@ data_quercus$cavPA <- (data_quercus$cav_basses_presence_cavites=="oui")
 
 modBinCavPA <- glm(cavPA~alti+releve+DBH,
   data=data_quercus,
+
   family=binomial(link = "logit"))
 
 residusTransfo <- simulateResiduals(modBinCavPA ,n=1000)
@@ -295,3 +352,12 @@ testQuantiles(residusTransfo,predictor=modBinCavPA$model$alti)
 
 summary(modBinCavPA)
 ```
+
+Le qqplot démontre la distribution uniforme des résidus.
+La distribution par relevé est globalement uniforme d'après le graphique testCategorical.
+Les résidus sont répartis de façon homogène d'après le graphique testQuantiles.
+
+Les hypothèses du nouveau modèle sont donc vérifiées.
+
+
+
