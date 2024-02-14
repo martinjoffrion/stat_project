@@ -23,7 +23,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # imports
 library(car)
 
-setwd("E:/SIGMA/M2/UE_905/dossier_stat")
+setwd("C:/ENSAT/stat_project")
 data <- read.csv("dataProjet_2024.csv", header = T, sep = ",")
 
 # filtrer dataset
@@ -144,5 +144,97 @@ points(1:length(vCoef),
   modAnova$coefficients[
     match(x$names,gsub("releve","",names(modAnova$coefficients)))],
   pch=21,bg=2)
+```
+
+## Question 3
+```{r}
+ 
+data_quercus$triangle[data_quercus$releve == 'BLO_12'|
+                 data_quercus$releve == 'BLO_13'|
+                 data_quercus$releve == 'BLO_17'] <- 'TR_1'
+
+data_quercus$triangle[data_quercus$releve == 'BLO_1'|
+                 data_quercus$releve == 'BLO_4'|
+                 data_quercus$releve == 'BLO_9'] <- 'TR_2'
+
+data_quercus$triangle[data_quercus$releve == 'BLO_21'|
+                 data_quercus$releve == 'BLO_24'|
+                 data_quercus$releve == 'BLO_27'] <- 'TR_3'
+
+### Plot
+plot(lati~long, data=data_quercus,xlab="Longitude WGS84",ylab="Latitude WGS84",pch=3)
+triangle <-  unique(data_quercus$triangle)
+col_pal <- c('red','green','blue')
+for (i in 1:length(triangle))
+  {
+  data_temp <- data_quercus[data_quercus$triangle == triangle[i],]
+
+  coorPla <- sapply(unique(data_temp$releve),function(idPla){
+   vIndPla <- which(data_temp$releve==idPla)
+   latiPla <- mean(data_temp$lati[vIndPla],na.rm=TRUE)
+   longPla <- mean(data_temp$long[vIndPla],na.rm=TRUE)
+   return(c(longPla,latiPla))
+  })
+  polygon(coorPla[1,],coorPla[2,],col = col_pal[i] )
+}
+
+coorPla <- sapply(unique(data_quercus$releve),function(idPla){
+ vIndPla <- which(data_quercus$releve==idPla)
+ latiPla <- mean(data_quercus$lati[vIndPla],na.rm=TRUE)
+ longPla <- mean(data_quercus$long[vIndPla],na.rm=TRUE)
+ return(c(longPla,latiPla))
+})
+text(coorPla[1,],coorPla[2,],colnames(coorPla),col=4,cex=0.5,font=2)
+
+
+### Define Triangle model
+modAnovaTriangle <- lm(DBH~0+triangle,data=data_quercus)
+modAnov_resStand <- rstandard(modAnovaTriangle)
+
+### Hypothèse 1 : loi gaussienne des erreurs
+
+par(mfrow=c(2,2))
+bks <- seq(-3,8,0.1)
+qqPlot(modAnov_resStand,distribution="norm",mean=0,sd=1,line="none")
+hist(modAnov_resStand, probability=T, breaks=bks)
+lines(bks,dnorm(bks,0,1),col="blue")
+
+### Hypothèse 2 : indépendance des erreurs
+
+vecIndObs <- as.numeric(rownames(modAnova$model))
+boxplot(modAnov_resStand~data_quercus$releve[vecIndObs],xlab="", 
+        ylab="Résidu standardisé",las=2,range=0)
+abline(h=0,lty="dashed")
+
+### Hypothèse 3 : homoscédasticité des erreurs
+
+#SL-plot
+plot(modAnovaTriangle,which=3,pch=3, add.smooth = FALSE) #Base du SL-plot pré-programmée dans R
+abline(h=0.8,col=4,lwd=2) #Ligne horizontale attendue
+lo <- loess(sqrt(abs(modAnov_resStand))~modAnovaTriangle$fitted.values) #Moyenne glissante des points
+vFit <- sort(unique(modAnovaTriangle$fitted.values))
+predLo <- predict(lo,vFit,se=TRUE)
+lines(predLo$fit~vFit,col=2,lwd=2)
+#Enveloppe de confiance autour de cette moyenne glissante :
+nFit <- length(vFit); ICBonf <- qnorm(1-0.05/2/nFit)
+lines(predLo$fit+ICBonf*predLo$se.fit~sort(
+    unique(modAnovaTriangle$fitted.values)
+  ),col=2,lwd=2,lty="dashed")
+lines(predLo$fit-ICBonf*predLo$se.fit~sort(
+    unique(modAnovaTriangle$fitted.values)
+  ),col=2,lwd=2,lty="dashed")
+
+### F test : comparaison avec test sans regroupemment des sous pop
+
+modAnovaReleve <- lm(DBH~0+releve,data=data_quercus)
+anova(modAnovaTriangle, modAnovaReleve)
+
+#F=239.87 avec p<<0.05 donc triqngle diminue valeur R21, car modèle simple = triangle et modèle complexe = modele releve
 
 ```
+## Question 4
+```{r}
+
+
+```
+
