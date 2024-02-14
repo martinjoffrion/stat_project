@@ -235,6 +235,63 @@ anova(modAnovaTriangle, modAnovaReleve)
 ## Question 4
 ```{r}
 
+vLogRel <- scale(coef(lm(lastLog~0+releve,data=data_quercus)))
+rownames(vLogRel) <- sub("releve","",rownames(vLogRel))
+data_quercus$LogRel <- vLogRel[
+  match(data_quercus$releve,rownames(vLogRel)),1]
+  
+modRegQuadLatRel_Querc_BC <- lm(
+  I(log10(DBH))~alti+I(alti^2)+LogRel,data=data_quercus)
+summary(modRegQuadLatRel_Querc_BC )
 
+mod <- modRegQuadLatRel_Querc_BC
+par(mfrow=c(1,3))
+#DISTRIBUTION SYMETRIQUE
+qqPlot(mod,distribution="norm",line="none")
+#HOMOSCEDASTICITE
+plot(mod,which=3,pch=3, add.smooth = FALSE)
+#Ligne horizontale attendue
+abline(h=0.8,col=4,lwd=2)
+#Moyenne glissante
+lo <- loess(
+  sqrt(abs(rstandard(mod)))~mod$fitted.values) 
+vFit <- sort(unique(mod$fitted.values))
+predLo <- predict(lo,vFit,se=TRUE)
+lines(predLo$fit~vFit,col=2,lwd=2)
+#Enveloppe de confiance autour de cette moyenne glissante :
+nFit <- length(vFit); ICBonf <- qnorm(1-0.05/2/nFit)
+lines(predLo$fit+ICBonf*predLo$se.fit~vFit,col=2,lwd=2,lty="dashed")
+lines(predLo$fit-ICBonf*predLo$se.fit~vFit,col=2,lwd=2,lty="dashed")
+#INDEPENDANCE
+x <- mod$model$LogRel
+plot(mod$residuals~x)
+abline(h=0,col=4)
+#Moyenne glissante
+lo <- loess(
+ mod$residuals~x) 
+vFit <- sort(unique(x))
+predLo <- predict(lo,vFit,se=TRUE)
+lines(predLo$fit~vFit,col=2,lwd=2)
+#Enveloppe de confiance autour de cette moyenne glissante :
+nFit <- length(vFit); ICBonf <- qnorm(1-0.05/2/nFit)
+lines(predLo$fit+ICBonf*predLo$se.fit~vFit,col=2,lwd=2,lty="dashed")
+lines(predLo$fit-ICBonf*predLo$se.fit~vFit,col=2,lwd=2,lty="dashed")
 ```
 
+## Question 5
+
+```{r}
+library(DHARMa)
+data_quercus$cavPA <- (data_quercus$cav_basses_presence_cavites=="oui")
+
+modBinCavPA <- glm(cavPA~alti+releve+DBH,
+  data=data_quercus,
+  family=binomial(link = "logit"))
+
+residusTransfo <- simulateResiduals(modBinCavPA ,n=1000)
+testUniformity(residusTransfo)
+testCategorical(residusTransfo,modBinCavPA$model$releve)
+testQuantiles(residusTransfo,predictor=modBinCavPA$model$alti)
+
+summary(modBinCavPA)
+```
