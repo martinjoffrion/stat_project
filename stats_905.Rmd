@@ -1,7 +1,7 @@
 ---
-title: "stats_905"
+title: "Statistiques - Modèles linéaires"
 author: "JOFFRION Martin & KNOBLOCH Adrien"
-date: "2024-02-07"
+date: "2023 - 2024"
 output:
   html_document:
     df_print: paged
@@ -9,16 +9,8 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, fig.align = 'center')
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = 'center')
 ```
-
-# Statistiques  Modèles linéaires
-
-# M2 SIGMA  UE 905
-
-## F. Laroche
-
-## 2023-2024
 
 ## Question 1
 
@@ -75,7 +67,7 @@ La forme slalomée de la répartition des résidus sur le qqplot indique un pote
 
 -   Hypothèse 2 : indépendance des erreurs :
 
-Notre modèle est déjà filtré sur une espèce, et l'ANOVA intègre les variables relevé et altitude, la seule variable encore suscueptible de générer une dépendance des résidus est le statut, à savoir l'état de l'arbre au moment du prélèvement.
+Notre modèle est déjà filtré sur une espèce, et l'ANOVA intègre les variables relevé et altitude, la seule variable encore susceptible de générer une dépendance des résidus est le statut, à savoir l'état de l'arbre au moment du prélèvement.
 
 Le boxplot démontre l'absence de biais sur les résidus, et donc l'indépendance des individus par rapport à la variable statut.
 
@@ -162,7 +154,7 @@ A nouveau, la forme slalomée de la répartition des résidus sur le qqplot indi
 
 -   Hypothèse 2 : indépendance des erreurs :
 
-Notre modèle n'est plus filtré sur une espèce, mais l'ANOVA intègre toutes les variables potentiellement sources de dépendances des erreurs. Ainsi, les résidus ont un biais nul quant à la variable espèce, comme prouvé sur le boxplot.
+Notre modèle n'est plus filtré sur une espèce, mais l'ANOVA intègre toutes les variables potentiellement sources de dépendance des erreurs. Ainsi, les résidus ont un biais nul quant à la variable espèce, comme prouvé sur le boxplot.
 
 -   Hypothèse 3 : homoscédasticité des erreurs :
 
@@ -320,7 +312,7 @@ lines(predLo$fit+ICBonf*predLo$se.fit~vFit,col=2,lwd=2,lty="dashed")
 lines(predLo$fit-ICBonf*predLo$se.fit~vFit,col=2,lwd=2,lty="dashed")
 ```
 
-Comparé aux résultats obtenu avec la variable latitude, la variable *lasLog* (dernière coupe massive) explique bien mieux l'effet relevé. C'est notamment visible dans le Scale-Location plot, où la moyenne glissée suit presque parfaitement le moyenne théorique, à l'exception des individus aux forts diamètres. 
+Comparé aux résultats obtenus avec la variable latitude, la variable *lasLog* (dernière coupe massive) explique bien mieux l'effet relevé. C'est notamment visible dans le Scale-Location plot, où la moyenne glissée suit presque parfaitement le moyenne théorique, à l'exception des individus aux forts diamètres. 
 
 Toutefois, l'effet des relevés persiste, comme illustré dans le dernier graphique. 
 
@@ -366,12 +358,11 @@ En sortie du graphique testQuantiles, nous obtenons une p-value de 0.9946. L'hyp
 Les hypothèses du nouveau modèle sont ainsi vérifiées.
 
 ### Analyse des résultats
-Comme le cas étudié dans le cours, l'altitude a un intervalle de confiance centré autour de 0, avec une p-value supérieure au seuil de confiance de 95% fixé. L'hypothèse nulle est donc vraissemblablement vérifiée : l'altitude n'a pas d'impact sur la formation des cavités.
+Comme le cas étudié dans le cours, l'altitude a un intervalle de confiance "centré" autour de 0, avec une p-value supérieure au seuil de confiance de 95% fixé. L'hypothèse nulle est donc vraissemblablement vérifiée : l'altitude n'a pas d'impact sur la formation des cavités.
 
-Dans le cas du DBH, les résultats sont similaires : l'intervalle de confiance est proche et centré autour de 0, avec une p-value de 0.7 largement supérieure à 0.05. A nouveau, l'hypothèse nulle est donc vraissemblablement vérifiée : le DBH n'a pas d'impact sur la formation des cavités.
+Dans le cas du DBH, les résultats sont similaires : l'intervalle de confiance est proche et "centré" autour de 0, avec une p-value de 0.7 largement supérieure à 0.05. A nouveau, l'hypothèse nulle est donc vraissemblablement vérifiée : le DBH n'a pas d'impact sur la formation des cavités.
 
-Pour affirmer ces résultats, nous avons calculé le R² de McFadden, afin d'évaluer le progrès apporté en terme de vraisemblance par notre modèle avec covariables. 
+Pour affirmer ces résultats, nous avons calculé le R² de McFadden, afin d'évaluer le progrès apporté en terme de vraisemblance par notre modèle avec les covariables DBH et altitude. 
 
 La valeur de R² obtenue est de 0.19, soit relativement faible. L'ajout des covariables DBH et altitude n'a donc pas significativement amélioré la qualité du modèle, confirmant ainsi les résultats obtenus précédemment. 
-
-Dans le cours, le R² de McFadden obtenu avec un modèle avec altitude seulement était de 0.188, soit très légèrement inférieur à celui obtenu avec l'ajout du DBH, confirmant encore une fois le faible impact du DBH sur le modèle.
+Dans le cours, le R² de McFadden obtenu avec un modèle avec altitude seulement était de 0.188, soit très légèrement inférieur à celui obtenu avec l'ajout du DBH, confirmant encore une fois le très faible impact du DBH sur le modèle.
