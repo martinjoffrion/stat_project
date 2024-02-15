@@ -1,6 +1,6 @@
 ---
 title: "stats_905"
-author: "MJ_AK"
+author: "JOFFRION Martin & KNOBLOCH Adrien"
 date: "2024-02-07"
 output:
   html_document:
