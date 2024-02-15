@@ -3,9 +3,9 @@ title: "stats_905"
 author: "MJ_AK"
 date: "2024-02-07"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -374,4 +374,4 @@ Pour affirmer ces résultats, nous avons calculé le R² de McFadden, afin d'év
 
 La valeur de R² obtenue est de 0.19, soit relativement faible. L'ajout des covariables DBH et altitude n'a donc pas significativement amélioré la qualité du modèle, confirmant ainsi les résultats obtenus précédemment. 
 
-Dans le cours, le R² de McFadden obtenu avec un modèle avec altitude seulement était de 0.188, soit très légèrement inférieur au notre obtenu avec l'ajout du DBH, confirmant encore une fois le faible impact du DBH sur le modèle.
+Dans le cours, le R² de McFadden obtenu avec un modèle avec altitude seulement était de 0.188, soit très légèrement inférieur à celui obtenu avec l'ajout du DBH, confirmant encore une fois le faible impact du DBH sur le modèle.
