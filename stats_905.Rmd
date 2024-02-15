@@ -37,11 +37,9 @@ modAnovRegQuad2_Querc_BC <- lm(I(log10(DBH))~alti+I(alti^2)+releve,data=data_que
 modAnov_resStand <- rstandard(modAnovRegQuad2_Querc_BC)
 
 ### Hypothèse 1 : loi gaussienne des erreurs
-
 bks <- seq(-6,6,0.1)
 qqPlot(modAnov_resStand,distribution="norm",mean=0,sd=1,line="none")
 hist(modAnov_resStand, probability=T, breaks=bks)
-
 lines(bks,dnorm(bks,0,1),col="blue")
 
 ### Hypothèse 2 : indépendance des erreurs
@@ -95,21 +93,18 @@ modAnova <- lm(DBH~0+releve+recherche_esp_lb_nom_plantae,data=data)
 modAnov_resStand <- rstandard(modAnova)
 
 ### Hypothèse 1 : loi gaussienne des erreurs
-
 bks <- seq(-7,7,0.1)
 qqPlot(modAnov_resStand,distribution="norm",mean=0,sd=1,line="none")
 hist(modAnov_resStand, probability=T, breaks=bks)
 lines(bks,dnorm(bks,0,1),col="blue")
 
 ### Hypothèse 2 : indépendance des erreurs
-
 vecIndObs <- as.numeric(rownames(modAnova$model))
 boxplot(modAnov_resStand~data$recherche_esp_lb_nom_plantae[vecIndObs],xlab="", 
         ylab="Résidu standardisé",las=2,range=0)
 abline(h=0,lty="dashed")
 
 ### Hypothèse 3 : homoscédasticité des erreurs
-
 #SL-plot
 plot(modAnova,which=3,pch=3, add.smooth = FALSE) #Base du SL-plot pré-programmée dans R
 abline(h=0.8,col=4,lwd=2) #Ligne horizontale attendue
@@ -139,11 +134,10 @@ arrows(x0 = x, y0= tabConfInt[,1],
   length=0.05)
 
   # test de significativité selon une sous-population de référence
-
-#Définition d'une sous-population de référence, ici BLO_11 
+    # Définition d'une sous-population de référence, ici BLO_11 
 data$releve <- relevel(as.factor(data$releve),ref="BLO_1")
 
-#Reformulation du modèle ANOVA :
+    # Reformulation du modèle ANOVA :
 modAnovaDif <- lm(DBH~releve+recherche_esp_lb_nom_plantae,data=data)
 summary(modAnovaDif)$coefficients
 
@@ -151,8 +145,7 @@ summary(modAnova)$coefficients
 summary(modAnovaDif)$coefficients
 tabConfInt <- confint(modAnovaDif,level=0.95)
 
-
-## R²
+  # R²
 x <- boxplot(DBH~releve,data=data,range=0,las=2,xlab="",cex.axis=0.5)
 vCoef <- modAnova$coefficients[
     match(x$names,gsub("releve","",names(modAnova$coefficients)))]
@@ -183,6 +176,7 @@ Sur le boxplot final, on observe ainsi des moyennes empiriques de sous échantil
 ## Question 3
 
 ```{r}
+### Création d'une colonne d'appartenance à un triangle
 data_quercus$triangle[data_quercus$releve == 'BLO_12'|
                  data_quercus$releve == 'BLO_13'|
                  data_quercus$releve == 'BLO_17'] <- 'TR_1'
@@ -195,7 +189,7 @@ data_quercus$triangle[data_quercus$releve == 'BLO_21'|
                  data_quercus$releve == 'BLO_24'|
                  data_quercus$releve == 'BLO_27'] <- 'TR_3'
 
-### Plot
+### Plot des triangles
 plot(lati~long, data=data_quercus,xlab="Longitude WGS84",ylab="Latitude WGS84",pch=3)
 triangle <-  unique(data_quercus$triangle)
 col_pal <- c('red','green','blue')
@@ -222,7 +216,7 @@ coorPla <- sapply(unique(data_quercus$releve),function(idPla){
 text(coorPla[1,],coorPla[2,],colnames(coorPla),col=4,cex=0.5,font=2)
 
 
-### Define Triangle model
+### Définition du moèle Triangle
 modAnovaTriangle <- lm(DBH~0+triangle,data=data_quercus)
 modAnov_resStand <- rstandard(modAnovaTriangle)
 
@@ -255,13 +249,9 @@ lines(predLo$fit-ICBonf*predLo$se.fit~sort(
     unique(modAnovaTriangle$fitted.values)
   ),col=2,lwd=2,lty="dashed")
 
-### F test : comparaison avec test sans regroupemment des sous pop
-
+### F test : comparaison avec un modèle sans regroupemment en triangle des sous-populations 
 modAnovaReleve <- lm(DBH~0+releve,data=data_quercus)
 anova(modAnovaTriangle, modAnovaReleve)
-
-#F=239.87 avec p<<0.05 donc triqngle diminue valeur R21, car modèle simple = triangle et modèle complexe = modele releve
-
 ```
 
 -   Hypothèse 1 : loi gaussienne des erreurs :
@@ -285,16 +275,18 @@ La fusion des sous populations n'est donc pas efficace. Le modèle initial inté
 ## Question 4
 
 ```{r}
-
+## Création d'une  variable 'dernière coupe massive' standardisée
 vLogRel <- scale(coef(lm(lastLog~0+releve,data=data_quercus)))
 rownames(vLogRel) <- sub("releve","",rownames(vLogRel))
 data_quercus$LogRel <- vLogRel[
   match(data_quercus$releve,rownames(vLogRel)),1]
   
+## Création d'un modèle mixte
 modRegQuadLatRel_Querc_BC <- lm(
   I(log10(DBH))~alti+I(alti^2)+LogRel,data=data_quercus)
 summary(modRegQuadLatRel_Querc_BC )
 
+## Vérification des hypothèses
 mod <- modRegQuadLatRel_Querc_BC
 #DISTRIBUTION SYMETRIQUE
 qqPlot(mod,distribution="norm",line="none")
@@ -337,27 +329,49 @@ La variable dernière coupe massive explique donc partiellement l'effet relevé.
 ## Question 5
 
 ```{r}
+# Import
 library(DHARMa)
+
+# Sélection des individus avec cavité
 data_quercus$cavPA <- (data_quercus$cav_basses_presence_cavites=="oui")
 
+# Création du modèle linaire binomial généralisé
 modBinCavPA <- glm(cavPA~alti+releve+DBH,
   data=data_quercus,
 
   family=binomial(link = "logit"))
 
+# Vérification des hypothèses
 residusTransfo <- simulateResiduals(modBinCavPA ,n=1000)
 testUniformity(residusTransfo)
 testCategorical(residusTransfo,modBinCavPA$model$releve)
 testQuantiles(residusTransfo,predictor=modBinCavPA$model$alti)
 
+# Résultats
 summary(modBinCavPA)
+confint(modBinCavPA)
+
+# Calcul du R² de McFadden
+mod_0 <- glm(cavPA~1,data=data_quercus,family=binomial(link="logit"))
+R2_mcFadden <- 1-modBinCavPA$deviance/mod_0$deviance
+sprintf('le R² de McFadden est de %f', R2_mcFadden)
 ```
 
-Le qqplot démontre la distribution uniforme des résidus.
-La distribution par relevé est globalement uniforme d'après le graphique testCategorical.
-Les résidus sont répartis de façon homogène d'après le graphique testQuantiles.
+En sortie du graphique qqplot, nous obtenons une p-value de 0.9887. L'hypothèse nulle est donc acceptée : la distribution des résidus est uniforme. 
 
-Les hypothèses du nouveau modèle sont donc vérifiées.
+En sortie du graphique testCategorical, nous obtenons une p-value de 0.9376. L'hypothèse nulle est donc acceptée : la distribution des résidus par relevé est uniforme.
 
+En sortie du graphique testQuantiles, nous obtenons une p-value de 0.9946. L'hypothèse nulle est donc acceptée : la distribution des résidus est homogène
 
+Les hypothèses du nouveau modèle sont ainsi vérifiées.
 
+### Analyse des résultats
+Comme le cas étudié dans le cours, l'altitude a un intervalle de confiance centré autour de 0, avec une p-value supérieure au seuil de confiance de 95% fixé. L'hypothèse nulle est donc vraissemblablement vérifiée : l'altitude n'a pas d'impact sur la formation des cavités.
+
+Dans le cas du DBH, les résultats sont similaires : l'intervalle de confiance est proche et centré autour de 0, avec une p-value de 0.7 largement supérieure à 0.05. A nouveau, l'hypothèse nulle est donc vraissemblablement vérifiée : le DBH n'a pas d'impact sur la formation des cavités.
+
+Pour affirmer ces résultats, nous avons calculé le R² de McFadden, afin d'évaluer le progrès apporté en terme de vraisemblance par notre modèle avec covariables. 
+
+La valeur de R² obtenue est de 0.19, soit relativement faible. L'ajout des covariables DBH et altitude n'a donc pas significativement amélioré la qualité du modèle, confirmant ainsi les résultats obtenus précédemment. 
+
+Dans le cours, le R² de McFadden obtenu avec un modèle avec altitude seulement était de 0.188, soit très légèrement inférieur au notre obtenu avec l'ajout du DBH, confirmant encore une fois le faible impact du DBH sur le modèle.
